@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor de Catálogos</title>
+<style>
+:root {
+  color-scheme: light;
+  --navy:#172554;
+  --blue:#2563eb;
+  --bg:#f3f6fb;
+  --border:#dbe2ea;
+  --muted:#64748b;
+  --green:#15803d;
+  --red:#b91c1c;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--bg);
+  color:#0f172a;
+  font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+main { max-width:760px; margin:24px auto; padding:0 14px 32px; }
+.panel {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 8px 28px #0f172a0a;
+}
+header { display:flex; align-items:center; gap:13px; margin-bottom:18px; }
+.logo {
+  width:48px;height:48px;display:grid;place-items:center;
+  background:#e8efff;border-radius:14px;font-size:24px;
+}
+h1 { margin:0;font-size:23px;line-height:1.2; }
+h2 { font-size:18px;margin:0 0 10px; }
+.sub { color:var(--muted);font-size:13px;margin-top:4px; }
+.pill {
+  background:#e8efff;color:#1d4ed8;border-radius:999px;
+  padding:5px 10px;font-size:12px;font-weight:700;white-space:nowrap;
+}
+.stats { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0; }
+.stat { background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:13px; }
+.stat span { display:block;color:var(--muted);font-size:13px; }
+.stat strong { display:block;font-size:27px;margin-top:2px; }
+label { display:block;font-size:13px;font-weight:650;margin:0 0 5px; }
+input,select,button { font:inherit; }
+input[type="date"],input[type="time"],input[type="text"],select {
+  width:100%;min-height:42px;border:1px solid #cbd5e1;
+  border-radius:9px;padding:9px 11px;background:white;color:#0f172a;
+}
+.field { margin:12px 0; }
+.toggle { display:flex;align-items:center;gap:8px;margin:14px 0;font-size:14px; }
+.toggle input { width:17px;height:17px; }
+.list { display:grid;gap:9px;margin-top:12px; }
+.catalog { border:1px solid var(--border);border-radius:12px;padding:12px; }
+.catalog-top { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px; }
+.name { font-weight:750; }
+.priority { color:#1d4ed8;font-size:11px;font-weight:800;letter-spacing:.04em;margin-top:2px; }
+.status { border-radius:999px;padding:4px 9px;font-size:12px;font-weight:750;background:#eef2f7;color:#475569;white-space:nowrap; }
+.status.down { background:#fee2e2;color:var(--red); }
+.status.up { background:#dcfce7;color:var(--green); }
+.buttons { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+button { cursor:pointer;border:1px solid #cbd5e1;border-radius:9px;min-height:41px;padding:9px 12px;background:#fff;color:#0f172a;font-weight:700; }
+button:focus,input:focus,select:focus { outline:3px solid #bfdbfe;outline-offset:1px; }
+.btn-down { color:var(--red);border-color:#fecaca; }
+.btn-down.selected { color:#fff;background:var(--red);border-color:var(--red); }
+.btn-up { color:var(--green);border-color:#bbf7d0; }
+.btn-up.selected { color:#fff;background:var(--green);border-color:var(--green); }
+.actions { display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px; }
+.primary { color:white;background:var(--blue);border-color:var(--blue); }
+.section { border-top:1px solid var(--border);padding-top:17px;margin-top:19px; }
+.empty { background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:20px;text-align:center;color:var(--muted); }
+.history-row { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #e2e8f0; }
+.history-row:last-child { border-bottom:0; }
+.history-row small { display:block;color:var(--muted);margin-top:3px; }
+.history-row button { min-height:32px;padding:5px 9px;font-size:12px; }
+.note { color:var(--muted);font-size:12px;margin-top:14px; }
+@media (max-width:480px) {
+  main { margin:12px auto; }
+  .panel { padding:15px; }
+  h1 { font-size:20px; }
+  .actions { grid-template-columns:1fr; }
+  .history-row { align-items:flex-start; }
+}
+</style>
+</head>
+<body>
+<main>
+<section class="panel">
+  <header>
+    <div class="logo" aria-hidden="true">▣</div>
+    <div style="flex:1">
+      <h1>Monitor de Catálogos</h1>
+      <div class="sub">Registro simples de estabilidade dos vídeos</div>
+    </div>
+    <div class="pill" id="roundPill">Rodada 1</div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <span>Conferidos nesta rodada</span>
+      <strong id="checkedCount">0/10</strong>
+    </div>
+    <div class="stat">
+      <span>Vídeos que caíram</span>
+      <strong id="downCount">0</strong>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="checkDate">Data da conferência</label>
+    <input id="checkDate" type="date">
+  </div>
+  <div class="field">
+    <label for="checkTime">Horário da conferência</label>
+    <input id="checkTime" type="time">
+  </div>
+
+  <label class="toggle">
+    <input id="mainOnly" type="checkbox">
+    Mostrar somente os 4 principais
+  </label>
+
+  <div class="section">
+    <h2>Catálogos</h2>
+    <div class="sub">Selecione “Caiu” ou “Não caiu” depois de verificar o vídeo.</div>
+    <div id="catalogList" class="list"></div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="saveRound">Salvar rodada e iniciar próxima</button>
+    <button id="copyCurrent">Copiar rodada atual</button>
+  </div>
+
+  <div class="section">
+    <h2>Histórico</h2>
+    <div class="sub" id="historyCount">Nenhum registro salvo ainda.</div>
+    <div id="historyList" style="margin-top:10px"></div>
+    <div class="actions">
+      <button id="exportCsv">Exportar histórico para Excel (CSV)</button>
+      <button id="copyHistory">Copiar histórico</button>
+    </div>
+  </div>
+
+  <p class="note">
+    Os registros ficam salvos neste navegador e dispositivo.
+    Exporte o histórico em CSV para abrir no Excel. O app não detecta
+    quedas automaticamente: você registra o resultado manualmente.
+  </p>
+</section>
+</main>
+<script>
+(() => {
+  const catalogs = [
+    {name:"CA GG US1", main:true},
+    {name:"CA3 B3", main:true},
+    {name:"CA JV 9574", main:true},
+    {name:"CA JV 3819", main:true},
+    {name:"CA JV 1002", main:false},
+    {name:"CA JV 6246", main:false},
+    {name:"CA LOS AN", main:false},
+    {name:"CA USD 20H", main:false},
+    {name:"GG USD 3", main:false},
+    {name:"RENTAL 4", main:false}
+  ];
+
+  const $ = id => document.getElementById(id);
+
+  const localISODate = () => {
+    const d = new Date();
+    const offset = d.getTimezoneOffset();
+    return new Date(d.getTime() - offset * 60000).toISOString().slice(0,10);
+  };
+
+  const currentTime = () => {
+    const d = new Date();
+    return String(d.getHours()).padStart(2,"0") + ":" +
+           String(d.getMinutes()).padStart(2,"0");
+  };
+
+  let round = 1;
+  let checks = {};
+  let history = [];
+
+  try {
+    const saved = JSON.parse(localStorage.getItem("catalogMonitorV1") || "null");
+    if (saved) {
+      round = saved.round || 1;
+      checks = saved.checks || {};
+      history = saved.history || [];
+    }
+  } catch(e) {}
+
+  $("checkDate").value = localISODate();
+  $("checkTime").value = currentTime();
+
+  function persist() {
+    try {
+      localStorage.setItem("catalogMonitorV1", JSON.stringify({
+        round, checks, history
+      }));
+    } catch(e) {}
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, ch => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;",
+      '"':"&quot;", "'":"&#39;"
+    }[ch]));
+  }
+
+  function renderCatalogs() {
+    const onlyMain = $("mainOnly").checked;
+    const visible = catalogs.filter(c => !onlyMain || c.main);
+
+    $("catalogList").innerHTML = visible.map(c => {
+      const value = checks[c.name]?.status || "";
+      const time = checks[c.name]?.time || "";
+      const date = checks[c.name]?.date || "";
+
+      const badge = value === "Caiu"
+        ? '<span class="status down">Caiu</span>'
+        : value === "Não caiu"
+        ? '<span class="status up">Não caiu</span>'
+        : '<span class="status">Não conferido</span>';
+
+      return `<article class="catalog">
+        <div class="catalog-top">
+          <div>
+            <div class="name">${escapeHtml(c.name)}</div>
+            ${c.main ? '<div class="priority">PRINCIPAL</div>' : ''}
+          </div>
+          ${badge}
+        </div>
+        <div class="buttons">
+          <button class="btn-down ${value==="Caiu"?"selected":""}"
+            data-cat="${escapeHtml(c.name)}" data-status="Caiu">Caiu</button>
+          <button class="btn-up ${value==="Não caiu"?"selected":""}"
+            data-cat="${escapeHtml(c.name)}" data-status="Não caiu">Não caiu</button>
+        </div>
+        ${value ? `<div class="sub" style="margin-top:8px">
+          Registrado às ${escapeHtml(time)} · ${escapeHtml(date)}
+        </div>` : ""}
+      </article>`;
+    }).join("");
+
+    $("catalogList").querySelectorAll("button[data-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const name = btn.dataset.cat;
+        checks[name] = {
+          status: btn.dataset.status,
+          time: $("checkTime").value || currentTime(),
+          date: $("checkDate").value || localISODate()
+        };
+        persist();
+        render();
+      });
+    });
+  }
+
+  function renderHistory() {
+    $("historyCount").textContent = history.length
+      ? `${history.length} registro(s) salvo(s)`
+      : "Nenhum registro salvo ainda.";
+
+    if (!history.length) {
+      $("historyList").innerHTML =
+        '<div class="empty">Seu histórico aparecerá aqui depois que você salvar a primeira rodada.</div>';
+      return;
+    }
+
+    $("historyList").innerHTML = [...history].reverse().map((h, revIndex) => {
+      const realIndex = history.length - 1 - revIndex;
+      return `<div class="history-row">
+        <div>
+          <strong>${escapeHtml(h.catalog)}</strong>
+          <small>Rodada ${h.round} · ${escapeHtml(h.date)} às ${escapeHtml(h.time)}</small>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="status ${h.status==="Caiu"?"down":"up"}">${escapeHtml(h.status)}</span>
+          <button data-delete="${realIndex}" aria-label="Excluir registro">Excluir</button>
+        </div>
+      </div>`;
+    }).join("");
+
+    $("historyList").querySelectorAll("button[data-delete]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        history.splice(Number(btn.dataset.delete), 1);
+        persist();
+        render();
+      });
+    });
+  }
+
+  function render() {
+    $("roundPill").textContent = "Rodada " + round;
+    const checked = catalogs.filter(c => checks[c.name]?.status).length;
+    const down = catalogs.filter(c => checks[c.name]?.status === "Caiu").length;
+
+    $("checkedCount").textContent = `${checked}/10`;
+    $("downCount").textContent = down;
+
+    renderCatalogs();
+    renderHistory();
+  }
+
+  function rowsForCurrent() {
+    return catalogs.filter(c => checks[c.name]?.status).map(c => ({
+      date: checks[c.name].date,
+      time: checks[c.name].time,
+      catalog: c.name,
+      status: checks[c.name].status,
+      round
+    }));
+  }
+
+  $("saveRound").addEventListener("click", () => {
+    const rows = rowsForCurrent();
+
+    if (!rows.length) {
+      alert("Marque Caiu ou Não caiu em pelo menos um catálogo antes de salvar.");
+      return;
+    }
+
+    history.push(...rows);
+    round += 1;
+    checks = {};
+    $("checkDate").value = localISODate();
+    $("checkTime").value = currentTime();
+    persist();
+    render();
+  });
+
+  $("copyCurrent").addEventListener("click", async () => {
+    const text = [
+      "RODADA " + round,
+      "Data | Horário | Catálogo | Status",
+      ...catalogs.map(c => {
+        const v = checks[c.name];
+        return `${v?.date || $("checkDate").value} | ${v?.time || $("checkTime").value} | ${c.name} | ${v?.status || "Não conferido"}`;
+      })
+    ].join("\n");
+
+    await copyText(text);
+  });
+
+  $("copyHistory").addEventListener("click", async () => {
+    const text = [
+      "Data,Horário,Catálogo,Status,Rodada",
+      ...history.map(h => [
+        h.date, h.time, h.catalog, h.status, h.round
+      ].map(csvEscape).join(","))
+    ].join("\n");
+
+    await copyText(text);
+  });
+
+  $("exportCsv").addEventListener("click", () => {
+    const rows = [
+      ["Data","Horário","Catálogo","Status do vídeo","Rodada"],
+      ...history.map(h => [h.date,h.time,h.catalog,h.status,h.round])
+    ];
+
+    const csv = "\uFEFF" + rows
+      .map(row => row.map(csvEscape).join(";"))
+      .join("\r\n");
+
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "relatorio_monitoramento_catalogos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  function csvEscape(v) {
+    return `"${String(v ?? "").replace(/"/g,'""')}"`;
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Copiado!");
+    } catch(e) {
+      const area = document.createElement("textarea");
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+
+      try {
+        document.execCommand("copy");
+        alert("Copiado!");
+      } catch(err) {
+        alert("Não foi possível copiar automaticamente. Selecione e copie o texto.");
+      }
+
+      area.remove();
+    }
+  }
+
+  $("mainOnly").addEventListener("change", renderCatalogs);
+  render();
+})();
+</script>
+</body>
+</html>
